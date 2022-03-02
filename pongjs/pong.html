@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+        <title>Pong</title>
+    </head>
+    <body>
+        <h1 style="font-family:'Courier New', Courier, monospace;">Ping Pong</h1>
+        <script>
+
+            // TODO:
+            // * Fix ball X velocity after collision with paddle.
+
+
+            // Setup
+
+            const width = 770;
+            const height = 490;
+
+            let config = {
+                type: Phaser.AUTO,
+                width: width,
+                height: height,
+                physics: {
+                    default: 'arcade',
+                    arcade: {
+                        gravity: { y: 300 },
+                        debug: false
+                    }
+                },
+                scene: {
+                    preload: preload,
+                    create: create,
+                    update: update
+                }
+            };
+            
+            let game = new Phaser.Game(config);
+            
+            function preload() {
+                this.load.image('table', './screen.png');
+                this.load.image("red_paddle", "./red-paddle.png");
+                this.load.image("green_paddle", "./green-paddle.png");
+                this.load.image("ball", "./ballz.png");
+                this.load.image("goal", "./goal.png");
+                this.load.image("marker", "./marker.png");
+            }
+
+            // Game Variables
+
+            let redPaddle;
+            let greenPaddle;
+            let ball;
+            let cursors;
+            let cursors2;
+            let redPoints = 0;
+            let greenPoints = 0;
+            let redScoreText;
+            let greenScoreText;
+            let winText;
+            let paddleSpeed = 150;
+            let redVel;
+            let greenVel;
+            let redXvel;
+            let greenXvel;
+
+            // Helper Functions
+            
+            function ballStartSpeed() {
+                let vel = Math.random() > 0.5 ? Math.floor(Math.random() * (140 - 100 + 1) + 100) : -(Math.floor(Math.random() * (120 - 90 + 1) + 90))
+                ball.setVelocityX(vel);
+                ball.setVelocityY(vel / 4);
+            }
+
+            // Main
+
+            function create() {
+                this.add.image(380, 270, 'table').setScale(2);
+                this.add.image(width / 4, height / 2, "marker").setScale(0.2);
+                this.add.image((width / 4) * 3, height / 2, "marker").setScale(0.2);
+                ball = this.physics.add.image(width / 2, height / 2, "ball").setScale(0.1).refreshBody();
+                redGoal = this.physics.add.image(10, height / 2, "goal").setScale(0.15).refreshBody();
+                greenGoal = this.physics.add.image(width - 10, height / 2, "goal").setScale(0.15).refreshBody();
+                redPaddle = this.physics.add.image(715, height / 2, "red_paddle").setScale(0.1).refreshBody();
+                greenPaddle = this.physics.add.image(50, height / 2, "green_paddle").setScale(0.1).refreshBody();
+
+                redScoreText = this.add.text((width / 2) + 20, 16, `${redPoints}`, {fontSize: '32px', fill: '#FFF'});
+                greenScoreText = this.add.text((width / 2) - 40, 16, `${greenPoints}`, {fontSize: '32px', fill: '#FFF'});
+
+                if (redPoints >= 7) {
+                    winText = this.add.text((width / 2) + 20, 100, "Red Wins!", {fontSize: '64px', fill: '#FF0000'});
+                    this.scene.pause();
+                } else if (greenPoints >= 7) {
+                    winText = this.add.text((width / 2) - 350, 100, "Green Wins!", {fontSize: '58px', fill: '#00FF00'});
+                    this.scene.pause();
+                }
+
+                redPaddle.setImmovable(true);
+                redPaddle.body.allowGravity = false;
+
+                greenPaddle.setImmovable(true);
+                greenPaddle.body.allowGravity = false;
+
+                redGoal.setImmovable(true);
+                redGoal.body.allowGravity = false;
+
+                greenGoal.setImmovable(true);
+                greenGoal.body.allowGravity = false;
+
+                ball.setImmovable(false);
+                ball.body.allowGravity = false;
+                ball.setBounce(1.15);
+                this.time.addEvent({delay: 2000, callback: ballStartSpeed, loop: false});
+
+                redPaddle.setCollideWorldBounds(true);
+                greenPaddle.setCollideWorldBounds(true);
+                ball.setCollideWorldBounds(true);
+
+                this.physics.add.collider(redPaddle, ball, () => {
+                    ball.setVelocityY(redVel);
+                    ball.setVelocityX(redXvel);
+                });
+                this.physics.add.collider(greenPaddle, ball, () => {
+                    ball.setVelocityY(greenVel);
+                    ball.setVelocityX(greenXvel);
+                });
+                this.physics.add.collider(ball, redGoal, () => {
+                    redPoints++;
+                    this.scene.restart();
+                });
+                this.physics.add.collider(ball, greenGoal, () => {
+                    greenPoints++;
+                    this.scene.restart();
+                });
+
+                cursors = this.input.keyboard.createCursorKeys();
+
+                cursors2 = this.input.keyboard.addKeys(
+                    {up:Phaser.Input.Keyboard.KeyCodes.W,
+                    down:Phaser.Input.Keyboard.KeyCodes.S,
+                    left:Phaser.Input.Keyboard.KeyCodes.A,
+                    right:Phaser.Input.Keyboard.KeyCodes.D});
+
+            }
+            
+            function update() {
+
+                // Red Paddle Controls
+
+                if (cursors.up.isDown) {
+                    redPaddle.setVelocityY(-paddleSpeed);
+                    redVel = -paddleSpeed;
+                } else if (cursors.down.isDown) {
+                    redPaddle.setVelocityY(paddleSpeed);
+                    redVel = paddleSpeed;
+                }
+
+                if ((cursors.up.isUp && cursors.down.isUp) || (cursors.up.isDown && cursors.down.isDown)) {
+                    redPaddle.setVelocityY(0);
+                    redVel = 0;
+                }
+
+                if (cursors.left.isDown) {
+                    redPaddle.x += -paddleSpeed / 120;
+                    redXvel = -paddleSpeed;
+                } else if (cursors.right.isDown) {
+                    redPaddle.x += paddleSpeed / 120;
+                    redXvel = paddleSpeed;
+                }
+
+                if ((cursors.left.isUp && cursors.right.isUp) || (cursors.left.isDown && cursors.right.isDown)) {
+                    redPaddle.setVelocityX(0);
+                    redXvel = 0;
+                }
+
+                if (redPaddle.x <= (width / 4) * 3) {
+                    redPaddle.x = (width / 4) * 3;
+                }
+
+                // Green Paddle Controls
+
+                if (cursors2.up.isDown) {
+                    greenPaddle.setVelocityY(-paddleSpeed);
+                    greenVel = -paddleSpeed;
+
+                    
+                } else if (cursors2.down.isDown) {
+                    greenPaddle.setVelocityY(paddleSpeed);
+                    greenVel = paddleSpeed;
+                }
+
+                if ((cursors2.up.isUp && cursors2.down.isUp) || (cursors2.up.isDown && cursors2.down.isDown)) {
+                    greenPaddle.setVelocityY(0);
+                    greenVel = 0;
+                }
+
+                if (cursors2.left.isDown) {
+                    greenPaddle.x += -paddleSpeed / 120;
+                    greenXvel = -paddleSpeed;
+                } else if (cursors2.right.isDown) {
+                    greenPaddle.x += paddleSpeed / 120;
+                    greenXvel = paddleSpeed;
+                }
+
+                if ((cursors2.left.isUp && cursors2.right.isUp) || (cursors2.left.isDown && cursors2.right.isDown)) {
+                    greenPaddle.setVelocityX(0);
+                    greenXvel = 0;
+                }
+
+                if (greenPaddle.x >= width / 4) {
+                    greenPaddle.x = width / 4;
+                }
+
+            }
+        </script>
+    </body>
+</html>
