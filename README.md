@@ -14,3 +14,8 @@ The best first game for anyone to make with a new game engine is Pong. I utilise
 ## Pongpy
 
 Tail between my legs, I came back to Python to relish the dearly missed OOP and barebones nature that the Pygame game engine provides. Unfortunately, it couldn't save me from my own ineptitude.
+
+
+## Tic Tac Toe
+
+This is the classic noughts and crosses game made in pygame. This took longer than expected as I initially attempted to create the entire game utilising solely a functional paradigm before realising this was Python and OOP was inescapable. However, apart from a few gross violations of DRY, I believe that the code written is reasonable scalable to a game with a bigger board perhaps or more players.
